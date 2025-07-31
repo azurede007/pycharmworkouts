@@ -22,5 +22,3 @@ import calculator.trignomentry.trigcalc as t
 from calculator.trignomentry.trigcalc import getcosvalue
 
 print(t.getcosvalue(30))
-
-
