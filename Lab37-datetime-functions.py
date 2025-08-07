@@ -102,5 +102,3 @@ print(dtf1)
 strf1 = dtf1.strftime("%Y-%m-%d")
 print(strf1)
 
-
-
