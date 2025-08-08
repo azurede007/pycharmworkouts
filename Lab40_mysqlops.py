@@ -1,59 +1,97 @@
 import mysql.connector
+from mysql.connector import Error
 from dotenv import load_dotenv
 import os
+import logging
 
 load_dotenv()
 
-def createconnection():
-    conn = None
+logging.basicConfig(filename='app.log',format="%(asctime)s - %(levelname)s - %(message)s",level=logging.INFO) #DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+def create_connection():
+    """Create and return a database connection."""
     try:
-        conn = mysql.connector.connect(host=os.getenv("MYSQL_SERVERNAME"),
-                                       user=os.getenv("MYSQL_USERNAME"),
-                                       password=os.getenv("MYSQL_PASSWORD"),
-                                       database=os.getenv("MYSQL_DBNAME"))
-    except Exception as e:
-        print("Error:", e)
+        conn = mysql.connector.connect(
+            host=os.getenv("MYSQL_SERVERNAME"),
+            user=os.getenv("MYSQL_USERNAME"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            database=os.getenv("MYSQL_DBNAME")
+        )
+        if conn.is_connected():
+            print("Database connection established.")
+        return conn
+    except Error as e:
+        print(f"Error connecting to database: {e}")
+        return None
 
-    return conn
+def get_all_databases(conn):
+    """Fetch and display all databases."""
+    if not conn:
+        print("No database connection.")
+        return
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SHOW DATABASES")
+            dbs = cursor.fetchall()
+            print("=== Database List ===")
+            for db in dbs:
+                print(db)
+    except Error as e:
+        print(f"Error fetching databases: {e}")
 
-def getalldatabases(con):
-    print("===Database List===")
-    cursor = con.cursor()
-    cursor.execute("SHOW DATABASES")
-    dbs = cursor.fetchall()
-    for db in dbs:
-        print(db)
-    cursor.close()
+def get_all_tables(conn):
+    """Fetch and display all tables."""
+    if not conn:
+        print("No database connection.")
+        return
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SHOW TABLES")
+            tbls = cursor.fetchall()
+            print("=== Table List ===")
+            for t in tbls:
+                print(t)
+    except Error as e:
+        print(f"Error fetching tables: {e}")
 
-def getalltables(con):
-    cursor = con.cursor()
-    cursor.execute("SHOW TABLES")
-    tbls = cursor.fetchall()
-    print("===Table List===")
-    for t in tbls:
-        print(t)
-    cursor.close()
+def get_table_data(conn, tablename):
+    """Fetch and display data from a specific table."""
+    if not conn:
+        print("No database connection.")
+        return
+    try:
+        with conn.cursor() as cursor:
+            query = f"SELECT * FROM `{tablename}`"
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            print(f"=== Table Data: {tablename} ===")
+            for row in rows:
+                print(row)
+    except Error as e:
+        print(f"Error fetching table data: {e}")
 
+def insert_customer_data(conn, custid, fname, lname, age, prof):
+    """Insert a record into tblcustomer."""
+    if not conn:
+        print("No database connection.")
+        return
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("INSERT INTO tblcustomer (custid, fname, lname, age, profession) VALUES (%s, %s, %s, %s, %s)", (custid, fname, lname, age, prof))
+            conn.commit()
+            print("Record inserted successfully.")
+    except Error as e:
+        print(f"Error inserting customer data: {e}")
 
-def gettabledata(con,tablename):
-    cursor = con.cursor()
-    cursor.execute(f"select * from {tablename}")
-    customers = cursor.fetchall()
-    print(f"===Table Data:{tablename}===")
-    for c in customers:
-        print(c)
-    cursor.close()
-
-
-def insertcustomerdata(con,custid,fname,lname,age,prof):
-    cursor = con.cursor()
-    cursor.execute(f"insert into tblcustomer values({custid},'{fname}','{lname}',{age},'{prof}')")
-    cursor._connection.commit()
-    cursor.close()
-    print("===Record Inserted===")
-
-conn = createconnection()
-getalldatabases(conn)
-getalltables(conn)
-gettabledata(conn,"tblcustomer")
-insertcustomerdata(conn,1004,"Irfan","Kader",35,"Teacher")
+if __name__ == "__main__":
+    conn = create_connection()
+    if conn:
+        logging.info("Database Connection Success!")
+        get_all_databases(conn)
+        get_all_tables(conn)
+        get_table_data(conn, "tblcustomer")
+        insert_customer_data(conn, 1006, "Manoj", "Prabakar", 35, "Sports")
+        logging.info("Record Inserted")
+        conn.close()
+        print("Database connection closed.")
+        logging.info("Database connection closed")
